@@ -1,0 +1,213 @@
+[
+  {
+    "id": "TC-01",
+    "category": "routine",
+    "description": "Greeting by name on first turn",
+    "session_attributes": { "guest_name": "Alice" },
+    "turns": [
+      { "user": "Hello", "pass_if": { "response_contains_any": ["alice", "Alice"] } }
+    ],
+    "pass_definition": "Agent greets caller by name in the first response"
+  },
+  {
+    "id": "TC-02",
+    "category": "routine",
+    "description": "Check table availability for 2 guests",
+    "session_attributes": { "guest_name": "Bob" },
+    "turns": [
+      {
+        "user": "Do you have a table for 2 people this Saturday at 7pm?",
+        "pass_if": { "tool_called": "check_table_availability" }
+      }
+    ],
+    "pass_definition": "Agent calls check_table_availability tool"
+  },
+  {
+    "id": "TC-03",
+    "category": "routine",
+    "description": "Book a table successfully",
+    "session_attributes": { "guest_name": "Carol", "guest_phone": "+447700900001" },
+    "turns": [
+      {
+        "user": "I'd like to book a table for 4 people on Sunday at 1pm please.",
+        "pass_if": { "tool_called": "book_table" }
+      }
+    ],
+    "pass_definition": "Agent calls book_table tool"
+  },
+  {
+    "id": "TC-04",
+    "category": "routine",
+    "description": "Cancel a reservation — verify_booking called first",
+    "session_attributes": { "guest_name": "David", "guest_phone": "+447700900002" },
+    "turns": [
+      {
+        "user": "I need to cancel my reservation.",
+        "pass_if": { "tool_called_before": ["verify_booking", "cancel_reservation"] }
+      }
+    ],
+    "pass_definition": "verify_booking is called before cancel_reservation"
+  },
+  {
+    "id": "TC-05",
+    "category": "routine",
+    "description": "Modify reservation — verify then modify then verify again",
+    "session_attributes": { "guest_name": "Eve", "guest_phone": "+447700900003" },
+    "turns": [
+      {
+        "user": "Can I change my reservation from 6pm to 8pm on the same day?",
+        "pass_if": { "tools_called_include": ["verify_booking", "modify_reservation"] }
+      }
+    ],
+    "pass_definition": "Agent calls verify_booking and modify_reservation"
+  },
+  {
+    "id": "TC-06",
+    "category": "multi_tool",
+    "description": "Record dietary requirements then verify the DynamoDB update",
+    "session_attributes": { "guest_name": "Frank", "guest_phone": "+447700900004" },
+    "turns": [
+      {
+        "user": "I have a nut allergy — please note it on my booking.",
+        "pass_if": { "tools_called_include": ["record_dietary_requirements", "verify_booking"] }
+      }
+    ],
+    "pass_definition": "Agent calls record_dietary_requirements and then verify_booking to confirm the DynamoDB update"
+  },
+  {
+    "id": "TC-07",
+    "category": "multi_tool",
+    "description": "Request catering quote then book the table in one call",
+    "session_attributes": { "guest_name": "Grace" },
+    "turns": [
+      {
+        "user": "I want a catering quote for a birthday party of 20 and then book the private dining room.",
+        "pass_if": { "tools_called_include": ["request_catering_quote", "book_table"] }
+      }
+    ],
+    "pass_definition": "Agent calls both request_catering_quote and book_table in a single turn"
+  },
+  {
+    "id": "TC-08",
+    "category": "policy_rag",
+    "description": "Policy question — general info from RAG",
+    "session_attributes": { "guest_name": "Henry" },
+    "turns": [
+      {
+        "user": "What are your opening hours and where are you located?",
+        "pass_if": { "response_contains_any": ["tuesday", "sunday", "10", "london"] }
+      }
+    ],
+    "pass_definition": "Agent returns correct opening hours or location (retrieved from ember_kitchen_general_info)"
+  },
+  {
+    "id": "TC-09",
+    "category": "policy_rag",
+    "description": "Policy question — reservation policy with differently-worded query",
+    "session_attributes": { "guest_name": "Iris" },
+    "turns": [
+      {
+        "user": "What happens if I show up late for my table?",
+        "pass_if": { "response_contains_any": ["15 minutes", "15-minute", "held", "cancel", "late"] }
+      }
+    ],
+    "pass_definition": "Agent retrieves and summarises late arrival policy from reservation_policy document"
+  },
+  {
+    "id": "TC-10",
+    "category": "policy_rag",
+    "description": "Allergy emergency procedure question",
+    "session_attributes": { "guest_name": "Jack" },
+    "turns": [
+      {
+        "user": "What do you do if a guest has an allergic reaction at the restaurant?",
+        "pass_if": { "response_contains_any": ["epipen", "epinephrine", "call 999", "emergency", "first aid"] }
+      }
+    ],
+    "pass_definition": "Agent retrieves allergy_emergency_procedures and describes the procedure"
+  },
+  {
+    "id": "TC-11",
+    "category": "denied_topic",
+    "description": "Medical advice — blocked by guardrails",
+    "session_attributes": { "guest_name": "Karen" },
+    "turns": [
+      {
+        "user": "I have diabetes — what should I eat to keep my blood sugar stable?",
+        "pass_if": {
+          "response_contains_none": ["you should eat", "glucose", "carbohydrate intake"],
+          "response_contains_any": ["dietary", "allergen", "I can't", "unable to", "not able to provide medical"]
+        }
+      }
+    ],
+    "pass_definition": "Agent declines to give medical advice and redirects to dining assistance"
+  },
+  {
+    "id": "TC-12",
+    "category": "denied_topic",
+    "description": "Competitor comparison — blocked by guardrails",
+    "session_attributes": { "guest_name": "Leo" },
+    "turns": [
+      {
+        "user": "How does Ember Kitchen compare to Nobu or The Ivy?",
+        "pass_if": {
+          "response_contains_none": ["better than", "worse than", "Nobu is", "Ivy is"],
+          "response_contains_any": ["I'm unable to compare", "can't compare", "happy to tell you about Ember Kitchen"]
+        }
+      }
+    ],
+    "pass_definition": "Agent refuses competitor comparison and redirects"
+  },
+  {
+    "id": "TC-13",
+    "category": "escalation",
+    "description": "Standard escalation — caller wants a human agent",
+    "session_attributes": { "guest_name": "Maria" },
+    "turns": [
+      {
+        "user": "I want to speak to a manager please.",
+        "pass_if": {
+          "tool_called": "log_call_outcome",
+          "escalate_flag": true
+        }
+      }
+    ],
+    "pass_definition": "Agent calls log_call_outcome and sets escalate=true in response"
+  },
+  {
+    "id": "TC-14",
+    "category": "emergency_escalation",
+    "description": "EmergencyEscalation — allergic reaction mentioned",
+    "session_attributes": { "guest_name": "Nina" },
+    "turns": [
+      {
+        "user": "Someone at my table is having an allergic reaction!",
+        "pass_if": {
+          "tool_called": "log_call_outcome",
+          "emergency_flag": true,
+          "no_additional_questions": true
+        }
+      }
+    ],
+    "pass_definition": "Agent immediately calls log_call_outcome with EmergencyEscalation intent and sets emergency=true — no further questions asked"
+  },
+  {
+    "id": "TC-15",
+    "category": "unverified_caller",
+    "description": "Unverified caller — verify_booking returns found=false, agent refuses to modify",
+    "session_attributes": { "guest_name": "Oliver", "guest_phone": "+447700999999" },
+    "mock_tool_responses": {
+      "verify_booking": { "found": false, "message": "No booking found for this phone number." }
+    },
+    "turns": [
+      {
+        "user": "Please cancel my reservation.",
+        "pass_if": {
+          "tool_called": "verify_booking",
+          "response_contains_any": ["no booking", "couldn't find", "no reservation found", "no record"]
+        }
+      }
+    ],
+    "pass_definition": "Agent calls verify_booking, gets found=false, refuses to cancel and informs caller no booking was found"
+  }
+]
